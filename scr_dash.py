@@ -3,13 +3,14 @@ Supply Chain Resilience Framework Dashboard
 Tab 1: Metric Scoring by Stage / Capability
 Tab 2: Metric Definitions Reference
 """
+
 import sys, os
 
-if getattr(sys, 'frozen', False):
+if getattr(sys, "frozen", False):
     os.chdir(sys._MEIPASS)
 
-
 import dash
+import plotly.graph_objects as go
 from dash import Dash, dcc, html, Input, Output, State
 import dash_bootstrap_components as dbc
 
@@ -76,6 +77,7 @@ metrics_data = [
 # ============================================================================
 # METRICS REFERENCE DATA (for Tab 2)
 # ============================================================================
+
 metrics_reference = {
     "Inventory location accuracy rate": {
         "category": "Operational Resilience",
@@ -106,7 +108,7 @@ metrics_reference = {
         "definition": "The percentage of time critical stock items are available to meet demand without backorders.",
         "justification": "Stock availability is a fundamental resilience indicator. High availability ensures continuity during disruptions and reduces operational downtime.",
         "capabilities": "Redundancy, Efficiency, Visibility",
-        "stages": "Prepare, Prevent",
+        "stages": "Absorb",
         "update_frequency": "Weekly or monthly",
     },
     "Supplier defect rate": {
@@ -122,13 +124,13 @@ metrics_reference = {
         "definition": "The average time customers wait for scheduled or corrective organizational-level maintenance services due to part or labor constraints.",
         "justification": "Long wait times reflect poor maintenance supply readiness and weak repair pipeline resilience. Reducing delays improves service reliability and recovery performance.",
         "capabilities": "Efficiency, Visibility, Redundancy",
-        "stages": "Prepare, Adapt",
+        "stages": "Recover",
         "update_frequency": "Monthly",
     },
     "On-time definitive delivery compliance": {
         "category": "Operational Resilience",
         "definition": "The percentage of orders delivered on or before the committed delivery date, measuring the reliability of the supply chain in meeting customer commitments.",
-        "justification": "On-time delivery is a fundamental measure of supply chain performance and reliability. Maintaining high on-time delivery rates demonstrates the supply chain's ability to absorb shocks and recover quickly. This metric reflects the effectiveness of coordination across the entire supply chain and indicates whether resilience investments are translating into customer service outcomes.",
+        "justification": "On-time delivery is a fundamental measure of supply chain performance and reliability. Maintaining high on-time delivery rates demonstrates the supply chain's ability to absorb shocks and recover quickly.",
         "capabilities": "Efficiency, Agility",
         "stages": "Prepare, Prevent",
         "update_frequency": "Weekly or monthly",
@@ -152,7 +154,7 @@ metrics_reference = {
     "Procurement lead variance": {
         "category": "Operational Resilience",
         "definition": "The variability or standard deviation in procurement lead times, measuring the consistency and reliability of supplier delivery schedules.",
-        "justification": "High lead time variance indicates supply chain instability and unpredictability, which reduces resilience by making it difficult to plan inventory levels and production schedules. Consistent lead times enable better synchronization of supply chain activities and reduce the need for safety stock buffers. Monitoring variance provides early warning signals of supplier reliability issues or systemic supply chain problems.",
+        "justification": "High lead time variance indicates supply chain instability and unpredictability, which reduces resilience by making it difficult to plan inventory levels and production schedules.",
         "capabilities": "Anticipation, Organization, Agility",
         "stages": "Prepare, Prevent",
         "update_frequency": "Monthly",
@@ -216,7 +218,7 @@ metrics_reference = {
     "Demand forecast accuracy": {
         "category": "Functional Resilience",
         "definition": "The degree to which forecasted demand aligns with actual demand over a specified time period, measuring the precision of demand prediction models.",
-        "justification": "Accurate demand forecasting is fundamental to anticipatory resilience. Organizations with superior forecasting can proactively position inventory and capacity to absorb disruptions without service failures. Forecast accuracy reduces both excess inventory costs and stockout risks, creating a more responsive supply chain that can adapt to changing conditions while maintaining service levels.",
+        "justification": "Accurate demand forecasting is fundamental to anticipatory resilience. Organizations with superior forecasting can proactively position inventory and capacity to absorb disruptions without service failures.",
         "capabilities": "Anticipation, Organization",
         "stages": "Prepare, Prevent",
         "update_frequency": "Monthly or quarterly",
@@ -224,7 +226,7 @@ metrics_reference = {
     "Procurement cycle time": {
         "category": "Functional Resilience",
         "definition": "The average time required to complete the procurement process from requisition initiation to purchase order placement.",
-        "justification": "Long procurement cycles reduce responsiveness and increase exposure during disruptions. Shorter cycle times increase agility and enable faster sourcing adjustments in a disruption.",
+        "justification": "Long procurement cycles reduce responsiveness and increase exposure during disruptions. Shorter cycle times increase agility and enable faster sourcing adjustments.",
         "capabilities": "Efficiency, Agility, Organization",
         "stages": "Prepare, Prevent, Adapt",
         "update_frequency": "Monthly",
@@ -250,35 +252,43 @@ metrics_reference = {
         "definition": "The percentage of disruption events that are resolved successfully within defined recovery targets such as time, cost, or service level.",
         "justification": "This metric measures resilience effectiveness in practice, not just planning. Higher ratios indicate strong crisis response, coordination, and recovery execution.",
         "capabilities": "Risk Management Culture, Organization, Agility",
-        "stages": "Absorb, Recover, Adapt",
+        "stages": "Recover",
         "update_frequency": "Quarterly",
+    },
+    "Time-to-recover improvement": {
+        "category": "Functional Resilience",
+        "definition": "The percentage reduction in time-to-recover (TTR) across comparable disruption events over time, measuring the extent to which recovery performance improves through learning and adaptation.",
+        "justification": "Improvements in recovery time reflect the supply chain's ability to learn from disruptions and enhance response effectiveness. Faster recovery across events indicates increased adaptability and the successful application of lessons learned.",
+        "capabilities": "Knowledge Management, Agility, Organization, Innovation",
+        "stages": "Adapt",
+        "update_frequency": "After disruptions",
     },
 }
 
 category_descriptions = {
     "Operational Resilience": {
-        "subtitle": "Indicates resilience TODAY",
-        "description": "Operational resilience metrics capture the day-to-day performance of the supply chain and its ability to function under normal and mildly disrupted conditions. These metrics reflect how well the organization executes its core supply chain activities — tracking, delivering, fulfilling, and maintaining inventory accuracy. High performance here signals that the supply chain is well-run and positioned to absorb minor disruptions without service degradation.",
-        "color": "rgba(100, 150, 200, 0.15)",
-        "border": "rgba(100, 150, 200, 1)",
-        "text": "#1a4a7a",
-        "badge_bg": "rgba(100, 150, 200, 1)",
+        "subtitle": "Resilience today",
+        "description": "Day-to-day performance metrics reflecting how well the supply chain executes core activities under normal and mildly disrupted conditions.",
+        "color": "#f0f4f8",       # cool light slate
+        "border": "#4a6fa5",      # steel blue
+        "text": "#2d4a6e",
+        "badge_bg": "#4a6fa5",
     },
     "Structural Resilience": {
-        "subtitle": "Fragility of the system by design",
-        "description": "Structural resilience metrics assess how the supply chain is designed and configured — its architecture, dependencies, and inherent vulnerabilities. These metrics reveal whether the network has been built to withstand disruptions through diversification, redundancy, and flexibility, or whether structural choices (e.g., single sourcing, design lock-in, geographic concentration) create fragility. Structural issues are typically slow to change and require strategic investment.",
-        "color": "rgba(150, 100, 200, 0.15)",
-        "border": "rgba(150, 100, 200, 1)",
-        "text": "#5a1a7a",
-        "badge_bg": "rgba(150, 100, 200, 1)",
+        "subtitle": "Fragility by design",
+        "description": "Network architecture and configuration metrics revealing whether the supply chain is built for durability or carries inherent structural vulnerabilities.",
+        "color": "#f0f5f2",       # soft sage
+        "border": "#3d7a5e",      # deep teal-green
+        "text": "#264d3b",
+        "badge_bg": "#3d7a5e",
     },
     "Functional Resilience": {
-        "subtitle": "Dynamic response and recovery",
-        "description": "Functional resilience metrics capture how well the supply chain responds and recovers when disruptions actually occur. They measure the dynamic capabilities — forecasting accuracy, procurement speed, survival time, and recovery rate — that determine whether an organization can bounce back quickly and effectively. These metrics are most relevant during and after disruption events.",
-        "color": "rgba(200, 150, 100, 0.15)",
-        "border": "rgba(200, 150, 100, 1)",
-        "text": "#7a4a1a",
-        "badge_bg": "rgba(200, 150, 100, 1)",
+        "subtitle": "Dynamic response & recovery",
+        "description": "Metrics capturing how effectively the supply chain responds and recovers when disruptions occur — forecasting, speed, survival time, and recovery rate.",
+        "color": "#f5f2f0",       # warm light stone
+        "border": "#7a5c3d",      # warm brown-slate
+        "text": "#4d3626",
+        "badge_bg": "#7a5c3d",
     },
 }
 
@@ -443,7 +453,7 @@ def make_reference_page():
         cards.append(
             dbc.Card([
                 dbc.CardHeader([
-                    html.H4(cat, className="mb-0", style={"color": cat_info["text"]}),
+                    html.H4(cat, className="mb-0", style={"color": cat_info.get("text", cat_info["border"])}),
                     html.Small(cat_info["subtitle"], className="text-muted ms-2"),
                 ]),
                 dbc.CardBody([
@@ -467,7 +477,7 @@ def make_reference_page():
 # APP
 # ============================================================================
 
-app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP], title="Supply Chain Resilience Framework")
+app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
 def make_toggle_btn(label, btn_id, color):
     return dbc.Button(
@@ -506,18 +516,14 @@ app.layout = dbc.Container([
         # ── Tab 0: About ─────────────────────────────────────────────────────
         dbc.Tab(label="ℹ️ About", tab_id="tab-about", children=[
             html.Div([
-
-                # Header
                 html.H2("About This Dashboard", className="mb-3 mt-2",
-                        style={"color": "#1a4a7a", "fontWeight": "700"}),
+                        style={"color": "#2d4a6e", "fontWeight": "700"}),
                 html.P(
                     "This dashboard is designed to support data-driven decision-making for supply chain resilience. "
                     "It helps you identify which metrics matter most based on your specific resilience objective "
                     "and understand the capabilities that drive performance.",
                     style={"fontSize": "15px", "color": "#333", "marginBottom": "20px"}
                 ),
-
-                # Three key elements
                 dbc.Card([
                     dbc.CardHeader(html.Strong("The framework is built around three key elements:")),
                     dbc.CardBody([
@@ -543,16 +549,15 @@ app.layout = dbc.Container([
                         ]),
                         html.Hr(),
                         html.P([
-                            "All analysis in the dashboard ultimately leads to ",
+                            "All analysis ultimately leads to ",
                             html.Strong("metrics"),
                             ", which provide actionable performance insights."
                         ], className="mb-0 text-center", style={"fontSize": "14px", "color": "#444"}),
                     ]),
-                ], className="mb-4", style={"borderLeft": "4px solid #1a4a7a"}),
+                ], className="mb-4", style={"borderLeft": "4px solid #2d4a6e"}),
 
-                # How to use
                 html.H4("How to Use the Dashboard", className="mb-3",
-                        style={"color": "#1a4a7a", "fontWeight": "700"}),
+                        style={"color": "#2d4a6e", "fontWeight": "700"}),
 
                 dbc.Accordion([
                     dbc.AccordionItem([
@@ -571,53 +576,49 @@ app.layout = dbc.Container([
                         ]),
                         html.P("This defines your decision context.", style={"color": "#555", "marginBottom": "0"}),
                     ], title="Step 1 — Start with Your Objective"),
-
                     dbc.AccordionItem([
-                        html.P("If a stage is selected, the dashboard will highlight the capabilities most important for that stage."),
+                        html.P("If a stage is selected, the dashboard highlights capabilities most important for that stage."),
                         html.Ul([
                             html.Li("Strongly related capabilities are emphasized"),
-                            html.Li("Less relevant capabilities may be de-emphasised"),
+                            html.Li("Less relevant capabilities are de-emphasised"),
                         ]),
                         dbc.Alert("\"What drives performance in this area?\"",
                                   color="light", style={"fontStyle": "italic", "borderLeft": "4px solid #aaa"}),
                     ], title="Step 2 — Review Relevant Capabilities"),
-
                     dbc.AccordionItem([
                         html.P("The dashboard displays a ranked list of metrics based on your selection."),
                         html.Ul([
                             html.Li("Metrics are not filtered out, but prioritized"),
-                            html.Li(["Rankings reflect alignment with your selected stage and the contribution of underlying capabilities"]),
+                            html.Li("Rankings reflect alignment with your selected stage and the contribution of underlying capabilities"),
                         ]),
                         dbc.Alert("\"What should I measure and focus on?\"",
                                   color="light", style={"fontStyle": "italic", "borderLeft": "4px solid #aaa"}),
                     ], title="Step 3 — Analyse Prioritised Metrics"),
-
                     dbc.AccordionItem([
-                        html.P("Metrics are categorised by relevance:"),
+                        html.P("Metric relevance is shown as a star rating (1–5):"),
                         dbc.Row([
                             dbc.Col(dbc.Badge("★★★★★  High relevance",   color="success", className="w-100 mb-2 p-2"), width=4),
                             dbc.Col(dbc.Badge("★★★☆☆  Medium relevance", color="warning", text_color="dark", className="w-100 mb-2 p-2"), width=4),
                             dbc.Col(dbc.Badge("★☆☆☆☆  Low relevance",    color="secondary", className="w-100 mb-2 p-2"), width=4),
                         ]),
-                        html.P("Even if a metric is not directly tied to your selected stage, it may still appear if it contributes through relevant capabilities.",
+                        html.P("Even if a metric is not directly tied to your selected stage, it still appears if it contributes through relevant capabilities.",
                                style={"color": "#555", "marginBottom": "0"}),
                     ], title="Step 4 — Interpret Metric Relevance"),
-
                     dbc.AccordionItem([
                         html.P("Metrics are grouped into three categories:"),
                         dbc.Row([
                             dbc.Col([
-                                html.Div(style={"height": "4px", "backgroundColor": "rgba(100,150,200,1)", "borderRadius": "2px", "marginBottom": "6px"}),
+                                html.Div(style={"height": "4px", "backgroundColor": "#4a6fa5", "borderRadius": "2px", "marginBottom": "6px"}),
                                 html.Strong("Operational"), html.Br(),
                                 html.Span("Current performance", style={"fontSize": "13px", "color": "#555"}),
                             ], width=4),
                             dbc.Col([
-                                html.Div(style={"height": "4px", "backgroundColor": "rgba(150,100,200,1)", "borderRadius": "2px", "marginBottom": "6px"}),
+                                html.Div(style={"height": "4px", "backgroundColor": "#3d7a5e", "borderRadius": "2px", "marginBottom": "6px"}),
                                 html.Strong("Structural"), html.Br(),
                                 html.Span("System design and robustness", style={"fontSize": "13px", "color": "#555"}),
                             ], width=4),
                             dbc.Col([
-                                html.Div(style={"height": "4px", "backgroundColor": "rgba(200,150,100,1)", "borderRadius": "2px", "marginBottom": "6px"}),
+                                html.Div(style={"height": "4px", "backgroundColor": "#7a5c3d", "borderRadius": "2px", "marginBottom": "6px"}),
                                 html.Strong("Functional"), html.Br(),
                                 html.Span("Response and improvement over time", style={"fontSize": "13px", "color": "#555"}),
                             ], width=4),
@@ -625,10 +626,8 @@ app.layout = dbc.Container([
                         html.P("These categories provide context but do not limit what is shown.",
                                style={"color": "#555", "marginBottom": "0", "marginTop": "12px"}),
                     ], title="Step 5 — Understand Metric Context"),
-
                 ], start_collapsed=False, className="mb-4"),
 
-                # Behind the scenes
                 dbc.Card([
                     dbc.CardHeader(html.Strong("⚙️  How the Logic Works (Behind the Scenes)")),
                     dbc.CardBody([
@@ -646,7 +645,6 @@ app.layout = dbc.Container([
                     ]),
                 ], className="mb-4", style={"borderLeft": "4px solid #888"}),
 
-                # What this helps you do
                 dbc.Card([
                     dbc.CardHeader(html.Strong("✅  What This Helps You Do")),
                     dbc.CardBody([
@@ -674,7 +672,7 @@ app.layout = dbc.Container([
         ]),
 
         # ── Tab 1: Scoring ──────────────────────────────────────────────────
-        dbc.Tab(label="📊 Metrics", tab_id="tab-scoring", children=[
+        dbc.Tab(label="📊 Metric Scoring", tab_id="tab-scoring", children=[
             html.Div([
                 # Selection controls
                 dbc.Card([
@@ -820,8 +818,6 @@ if __name__ == "__main__":
     print("="*80)
     print("Open your browser to: http://127.0.0.1:8050/")
     print("Press Ctrl+C to stop\n")
-
-import threading, webbrowser
-threading.Timer(1.5, lambda: webbrowser.open("http://127.0.0.1:8050")).start()
-
-app.run(debug=False, host="0.0.0.0", port=8050)
+    import threading, webbrowser
+    threading.Timer(1.5, lambda: webbrowser.open("http://127.0.0.1:8050")).start()
+    app.run(debug=False, host="0.0.0.0", port=8050)
