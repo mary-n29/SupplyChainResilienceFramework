@@ -467,7 +467,7 @@ def make_reference_page():
 # APP
 # ============================================================================
 
-app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP], title="Supply Chain Resilience Framework")
 
 def make_toggle_btn(label, btn_id, color):
     return dbc.Button(
